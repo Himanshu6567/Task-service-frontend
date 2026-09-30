@@ -1,15 +1,15 @@
 {
   "/_not-found/page": "/_not-found",
   "/api/[...path]/route": "/api/[...path]",
-  "/UserProfile/page": "/UserProfile",
   "/Admin/dashboard/page": "/Admin/dashboard",
   "/Admin/page": "/Admin",
   "/login/page": "/login",
-  "/my-messages/page": "/my-messages",
-  "/my-bookings/page": "/my-bookings",
+  "/UserProfile/page": "/UserProfile",
   "/provider-messages/page": "/provider-messages",
-  "/signup/page": "/signup",
   "/register/page": "/register",
   "/page": "/",
-  "/services/page": "/services"
+  "/signup/page": "/signup",
+  "/my-messages/page": "/my-messages",
+  "/services/page": "/services",
+  "/my-bookings/page": "/my-bookings"
 }

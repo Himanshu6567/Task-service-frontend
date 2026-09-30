@@ -55,9 +55,47 @@ export default function Page() {
     }));
 
   const sendOtpRequest = async (payload, isResend = false) => {
-    const response = await axios.post("/api/signup/send-otp", payload, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const requestId = globalThis.crypto?.randomUUID?.() || `otp-${Date.now()}`;
+    console.info(
+      "[signup] OTP request started",
+      JSON.stringify({ requestId, resend: isResend, role: payload.role }),
+    );
+
+    let response;
+    try {
+      response = await axios.post("/api/signup/send-otp", payload, {
+        timeout: 125000,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId,
+        },
+      });
+    } catch (error) {
+      const serverRequestId =
+        error.response?.headers?.["x-request-id"] ||
+        error.response?.data?.requestId ||
+        requestId;
+      console.error(
+        "[signup] OTP request failed",
+        JSON.stringify({
+          requestId: serverRequestId,
+          status: error.response?.status,
+          code: error.code,
+          message: error.response?.data?.msg || error.message,
+        }),
+      );
+      error.requestId = serverRequestId;
+      throw error;
+    }
+
+    console.info(
+      "[signup] OTP request succeeded",
+      JSON.stringify({
+        requestId,
+        status: response.status,
+        message: response.data.msg,
+      }),
+    );
 
     setSignupPayload({
       email: payload.email,
@@ -107,9 +145,13 @@ export default function Page() {
         role,
       });
     } catch (error) {
+      console.log(error)
       const message =
         error.response?.data?.msg || "Unable to send the verification code.";
-      showMessage("error", message);
+      showMessage(
+        "error",
+        error.requestId ? `${message} (Reference: ${error.requestId})` : message,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -167,7 +209,10 @@ export default function Page() {
       );
     } catch (error) {
       const message = error.response?.data?.msg || "Unable to resend the code.";
-      showMessage("error", message);
+      showMessage(
+        "error",
+        error.requestId ? `${message} (Reference: ${error.requestId})` : message,
+      );
     }
   };
 
