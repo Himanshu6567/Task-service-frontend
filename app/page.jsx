@@ -1,7 +1,6 @@
 "use client";
 
 import axios from "axios";
-import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -17,25 +16,10 @@ import {
   Star,
   Users,
 } from "lucide-react";
-import { Link, useNavigate } from "./next-router";
+import { Link } from "./next-router";
 import { useMessage } from "./providers";
 import ProviderDashboard from "./components/ProviderDashboard";
 import { getSession } from "../lib/auth-client";
-
-function AuthRoute({ children }) {
-  const navigate = useNavigate();
-  const [authenticated, setAuthenticated] = useState(null);
-  useEffect(() => {
-    getSession()
-      .then(() => setAuthenticated(true))
-      .catch(() => navigate("/login"));
-  }, [navigate]);
-  return authenticated === null ? null : children;
-}
-
-AuthRoute.propTypes = {
-  children: PropTypes.node.isRequired,
-};
 
 function HeroSection() {
   return (
@@ -557,19 +541,16 @@ export default function Page() {
       .catch(() => setRole(""));
   }, []);
 
-  if (role === null) return null;
   if (role === "ServiceProvider") return <ProviderDashboard />;
 
   return (
-    <AuthRoute>
-      <div>
-        <HeroSection />
-        <OurServices />
-        <HowItWorksSection />
-        <CommunitySection />
-        <FeedbackSection />
-        <GetInTouch />
-      </div>
-    </AuthRoute>
+    <div>
+      <HeroSection />
+      <OurServices />
+      <HowItWorksSection />
+      <CommunitySection />
+      <FeedbackSection />
+      <GetInTouch />
+    </div>
   );
 }

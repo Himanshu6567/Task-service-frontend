@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="relative flex min-h-[calc(100vh-4.5rem)] items-center justify-center overflow-hidden bg-[#f5f8f4] px-4 py-10 sm:px-6">
+    <main className="relative flex min-h-[calc(100vh)] items-center justify-center overflow-hidden bg-[#f5f8f4] px-4 py-10 sm:px-6">
       <div className="pointer-events-none absolute -right-28 -top-28 h-80 w-80 rounded-full bg-emerald-200/50 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-36 -left-24 h-96 w-96 rounded-full bg-amber-100/70 blur-3xl" />
       <section className="relative w-full max-w-md rounded-3xl border border-white bg-white p-6 shadow-[0_24px_80px_-32px_rgba(15,61,46,0.32)] sm:p-9">
