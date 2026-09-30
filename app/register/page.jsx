@@ -6,13 +6,62 @@ import {
   ArrowLeft,
   ArrowRight,
   BriefcaseBusiness,
-  CheckCircle2,
   FileImage,
-  LocateFixed,
-  MapPin,
 } from "lucide-react";
 import { useLocation, useNavigate } from "../next-router";
 import { useMessage } from "../providers";
+
+const MAX_PROFILE_IMAGE_BYTES = 3 * 1024 * 1024;
+
+async function prepareProfileImage(file) {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    throw new Error("Choose a JPG, PNG, or WebP profile photo.");
+  }
+  if (file.size <= MAX_PROFILE_IMAGE_BYTES) return file;
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+    const maxDimension = 1440;
+    let scale = Math.min(
+      1,
+      maxDimension / Math.max(bitmap.width, bitmap.height),
+    );
+    let quality = 0.82;
+    let blob;
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Image compression is unavailable.");
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", quality),
+      );
+      if (!blob) throw new Error("The selected image could not be processed.");
+      if (blob.size <= MAX_PROFILE_IMAGE_BYTES) break;
+      quality *= 0.8;
+      scale *= 0.8;
+    }
+
+    if (!blob || blob.size > MAX_PROFILE_IMAGE_BYTES) {
+      throw new Error("The photo is too large. Choose a smaller image.");
+    }
+
+    return new File([blob], "provider-profile.jpg", {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch {
+    throw new Error(
+      "The profile photo could not be optimized. Choose a JPG, PNG, or WebP image under 3 MB.",
+    );
+  } finally {
+    bitmap?.close();
+  }
+}
 
 export default function Page() {
   const navigate = useNavigate();
@@ -35,13 +84,15 @@ export default function Page() {
     salary: "",
     workDescription: "",
     gender: "",
-    location: null,
   });
   const handleChange = (event) => {
     const { name: field, value, type, files } = event.target;
     if (type === "file") {
       const file = files[0];
-      if (file && file.type.startsWith("image/")) {
+      if (
+        file &&
+        ["image/jpeg", "image/png", "image/webp"].includes(file.type)
+      ) {
         setFormData((previous) => ({ ...previous, image: file }));
         setImagePreview(URL.createObjectURL(file));
         setError("");
@@ -56,23 +107,6 @@ export default function Page() {
       setError("");
     }
   };
-  const getCurrentLocation = () => {
-    if (navigator.geolocation)
-      navigator.geolocation.getCurrentPosition(
-        ({ coords: { latitude, longitude } }) =>
-          setFormData((previous) => ({
-            ...previous,
-            location: [latitude, longitude],
-          })),
-        (locationError) => {
-          console.error("Error getting location:", locationError.message);
-          setError(
-            "We could not access your location. Allow location access and retry.",
-          );
-        },
-      );
-    else setError("Geolocation is not supported by your browser.");
-  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (
@@ -82,38 +116,34 @@ export default function Page() {
       !formData.jobCategory ||
       !formData.salary ||
       !formData.workDescription.trim() ||
-      !formData.gender ||
-      !formData.location
+      !formData.gender
     ) {
-      setError(
-        "Complete all fields, add a profile image, and share your location.",
-      );
+      setError("Complete all fields and add a profile image.");
       return;
     }
 
     setError("");
     setBtnText("Creating profile...");
-    const body = new FormData();
-    [
-      "name",
-      "email",
-      "password",
-      "DoB",
-      "aboutYou",
-      "jobCategory",
-      "image",
-      "salary",
-      "workDescription",
-      "gender",
-      "mobile",
-      "location",
-      "role",
-    ].forEach((field) => body.append(field, formData[field]));
     try {
+      const profileImage = await prepareProfileImage(formData.image);
+      const body = new FormData();
+      [
+        "name",
+        "email",
+        "password",
+        "DoB",
+        "aboutYou",
+        "jobCategory",
+        "salary",
+        "workDescription",
+        "gender",
+        "mobile",
+        "role",
+      ].forEach((field) => body.append(field, formData[field]));
+      body.append("image", profileImage);
       const response = await axios.post(
         "/api/serviceProvider/createNewServiceProvider",
         body,
-        { headers: { "Content-Type": "multipart/form-data" } },
       );
       if (response.status == 201) {
         showMessage("success", "Provider profile created");
@@ -126,6 +156,10 @@ export default function Page() {
         console.error("Unable to create provider profile", error);
         setError(
           error.response?.data?.msg ||
+            (error.response?.status === 413
+              ? "The upload was too large. Choose a smaller profile photo and try again."
+              : "") ||
+            error.message ||
             "Unable to create your profile. Please try again.",
         );
       }
@@ -371,15 +405,13 @@ export default function Page() {
                   3
                 </span>
                 <div>
-                  <h2 className="font-semibold text-slate-900">
-                    Profile photo and location
-                  </h2>
+                  <h2 className="font-semibold text-slate-900">Profile photo</h2>
                   <p className="text-xs text-slate-500">
-                    Customers use these to recognize and find your service.
+                    Upload a clear photo. Large images are optimized before upload.
                   </p>
                 </div>
               </div>
-              <div className="grid gap-5 sm:grid-cols-[1fr_1fr]">
+              <div className="grid gap-5">
                 <label className="flex min-h-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center transition hover:border-emerald-400 hover:bg-emerald-50/50">
                   {imagePreview ? (
                     <div className="flex items-center gap-4">
@@ -404,46 +436,12 @@ export default function Page() {
                   <input
                     type="file"
                     name="image"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={handleChange}
                     required={!formData.image}
                     className="sr-only"
                   />
                 </label>
-                <div className="flex flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${formData.location ? "bg-emerald-100 text-emerald-800" : "bg-white text-slate-500"}`}
-                    >
-                      {formData.location ? (
-                        <CheckCircle2 size={19} />
-                      ) : (
-                        <MapPin size={19} />
-                      )}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {formData.location
-                          ? "Location added"
-                          : "Add your service location"}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Used to support local service requests. Your exact
-                        coordinates are not shown on this form.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={getCurrentLocation}
-                    className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
-                  >
-                    <LocateFixed size={17} />
-                    {formData.location
-                      ? "Refresh location"
-                      : "Use my current location"}
-                  </button>
-                </div>
               </div>
             </section>
 
