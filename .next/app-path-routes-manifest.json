@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/[...path]/route": "/api/[...path]",
+  "/UserProfile/page": "/UserProfile",
+  "/Admin/dashboard/page": "/Admin/dashboard",
+  "/login/page": "/login",
+  "/my-bookings/page": "/my-bookings",
+  "/Admin/page": "/Admin",
+  "/my-messages/page": "/my-messages",
+  "/provider-messages/page": "/provider-messages",
+  "/page": "/",
+  "/services/page": "/services",
+  "/register/page": "/register",
+  "/signup/page": "/signup"
+}
