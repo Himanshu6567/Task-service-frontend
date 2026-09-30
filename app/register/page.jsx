@@ -102,13 +102,22 @@ export default function Page() {
     } else {
       setFormData((previous) => ({
         ...previous,
-        [field]: field === "salary" ? Number(value) : value,
+        [field]:
+          field === "salary"
+            ? Number(value)
+            : field === "mobile"
+              ? value.replace(/\D/g, "").slice(0, 10)
+              : value,
       }));
       setError("");
     }
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!/^\d{10}$/.test(formData.mobile)) {
+      setError("Enter a 10-digit mobile number.");
+      return;
+    }
     if (
       !formData.image ||
       !formData.DoB ||
@@ -247,6 +256,10 @@ export default function Page() {
                     value={formData.mobile}
                     onChange={handleChange}
                     autoComplete="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    title="Enter exactly 10 digits"
                     required
                     className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
                   />

@@ -445,9 +445,19 @@ function ProviderChat({ provider, onClose }) {
           <textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.ctrlKey &&
+                !event.metaKey
+              ) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
             rows={1}
             maxLength={2000}
-            placeholder="Write a message…"
+            placeholder="Write a message… (Enter to send, Ctrl+Enter for a new line)"
             className="max-h-32 min-h-11 flex-1 resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
             aria-label="Message"
           />

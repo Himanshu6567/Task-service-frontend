@@ -8,12 +8,15 @@ import {
   ArrowDownLeft,
   BriefcaseBusiness,
   ClipboardList,
+  History,
   LayoutDashboard,
   LogOut,
   MessageSquareText,
   Search,
   ShieldCheck,
   Star,
+  RefreshCw,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { useNavigate } from "../../next-router";
@@ -27,6 +30,7 @@ const VIEWS = [
   { id: "messages", label: "Messages", icon: MessageSquareText },
   { id: "catalog", label: "Service catalog", icon: Activity },
   { id: "feedback", label: "Feedback", icon: Star },
+  { id: "activity", label: "Activity log", icon: History },
 ];
 
 const formatDate = (value) =>
@@ -117,6 +121,7 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState("overview");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -138,6 +143,19 @@ export default function AdminDashboard() {
 
   const signOut = () => {
     logout().finally(() => navigate("/Admin"));
+  };
+
+  const refreshDashboard = async () => {
+    setRefreshing(true);
+    try {
+      const response = await axios.get("/api/admin/dashboard");
+      setData(response.data);
+      setError("");
+    } catch (requestError) {
+      setError(requestError.response?.data?.msg || "Unable to refresh dashboard.");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const filterRows = useCallback(
@@ -164,7 +182,7 @@ export default function AdminDashboard() {
     if (!confirmed) return;
 
     try {
-      await axios.delete(
+      const response = await axios.delete(
         `/api/admin/${type === "user" ? "delete-user" : "delete-provider"}/${item._id}`,
       );
 
@@ -178,11 +196,16 @@ export default function AdminDashboard() {
             ...current.stats,
             [key]: Math.max(0, Number(current.stats[key] || 0) - 1),
           },
+          activity: response.data.activity
+            ? [response.data.activity, ...(current.activity || [])].slice(0, 100)
+            : current.activity,
         };
       });
 
       window.alert(
-        `${targetLabel.charAt(0).toUpperCase()}${targetLabel.slice(1)} deleted successfully.`,
+        response.data.auditLogged === false
+          ? `${targetLabel.charAt(0).toUpperCase()}${targetLabel.slice(1)} deleted, but the activity log could not be saved.`
+          : `${targetLabel.charAt(0).toUpperCase()}${targetLabel.slice(1)} deleted successfully.`,
       );
     } catch (requestError) {
       window.alert(
@@ -224,8 +247,51 @@ export default function AdminDashboard() {
         service.discription,
       ]),
       feedback: filterRows(data.feedback, (item) => [item.name, item.feedback]),
+      activity: filterRows(data.activity || [], (item) => [
+        item.adminEmail,
+        item.action,
+        item.targetType,
+        item.targetName,
+        item.targetEmail,
+        item.summary,
+      ]),
     };
   }, [data, filterRows]);
+
+  const weeklyActivity = useMemo(() => {
+    if (!data) return [];
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - (6 - index));
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      return {
+        date,
+        key,
+        label: new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(
+          date,
+        ),
+        users: 0,
+        providers: 0,
+        requests: 0,
+      };
+    });
+    const byDay = new Map(days.map((day) => [day.key, day]));
+    const addCount = (items, field) => {
+      items.forEach((item) => {
+        if (!item.createdAt) return;
+        const date = new Date(item.createdAt);
+        const day = byDay.get(
+          `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
+        );
+        if (day) day[field] += 1;
+      });
+    };
+    addCount(data.users, "users");
+    addCount(data.providers, "providers");
+    addCount(data.requests, "requests");
+    return days;
+  }, [data]);
 
   if (loading)
     return (
@@ -277,7 +343,23 @@ export default function AdminDashboard() {
       icon: ClipboardList,
       accent: "text-slate-700 bg-slate-100",
     },
+    {
+      label: "Active jobs",
+      value: data.stats.activeJobs,
+      icon: Activity,
+      accent: "text-violet-700 bg-violet-50",
+    },
+    {
+      label: "Completed jobs",
+      value: data.stats.completedJobs,
+      icon: Star,
+      accent: "text-teal-700 bg-teal-50",
+    },
   ];
+  const chartMaximum = Math.max(
+    1,
+    ...weeklyActivity.map((day) => day.users + day.providers + day.requests),
+  );
 
   return (
     <main className="min-h-screen bg-[#f5f8f4]">
@@ -296,6 +378,7 @@ export default function AdminDashboard() {
               </h1>
             </div>
           </div>
+
           <button
             onClick={signOut}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
@@ -324,6 +407,14 @@ export default function AdminDashboard() {
         </aside>
 
         <section className="min-w-0">
+          {error && (
+            <p
+              role="status"
+              className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              {error}
+            </p>
+          )}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
@@ -333,8 +424,9 @@ export default function AdminDashboard() {
                 {VIEWS.find((view) => view.id === activeView)?.label}
               </h2>
             </div>
-            {activeView !== "overview" && (
-              <label className="relative block w-full sm:max-w-xs">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              {activeView !== "overview" && (
+                <label className="relative block w-full sm:max-w-xs">
                 <Search
                   size={17}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -345,13 +437,23 @@ export default function AdminDashboard() {
                   placeholder="Search this view"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
                 />
-              </label>
-            )}
+                </label>
+              )}
+              <button
+                type="button"
+                onClick={refreshDashboard}
+                disabled={refreshing}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800 disabled:opacity-60"
+              >
+                <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                Refresh
+              </button>
+            </div>
           </div>
 
           {activeView === "overview" ? (
             <>
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
                 {stats.map(({ label, value, icon: Icon, accent }) => (
                   <article
                     key={label}
@@ -372,6 +474,87 @@ export default function AdminDashboard() {
                     </div>
                   </article>
                 ))}
+              </div>
+              <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                  <div>
+                    <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                      <TrendingUp size={17} className="text-emerald-700" />
+                      Platform activity
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      New users, providers, and service requests · last 7 days
+                    </p>
+                  </div>
+                  <div className="mt-6 grid grid-cols-7 gap-2 sm:gap-4">
+                    {weeklyActivity.map((day) => (
+                      <div
+                        key={day.key}
+                        className="flex min-w-0 flex-col items-center gap-2"
+                      >
+                        <div className="flex h-32 w-full items-end justify-center border-b border-slate-100 pb-1">
+                          <div className="flex h-full w-full max-w-8 flex-col justify-end overflow-hidden rounded-t-lg bg-slate-100">
+                            <div
+                              className="w-full bg-sky-500"
+                              style={{ height: `${(day.users / chartMaximum) * 100}%` }}
+                              title={`${day.users} users`}
+                            />
+                            <div
+                              className="w-full bg-emerald-500"
+                              style={{ height: `${(day.providers / chartMaximum) * 100}%` }}
+                              title={`${day.providers} providers`}
+                            />
+                            <div
+                              className="w-full bg-amber-400"
+                              style={{ height: `${(day.requests / chartMaximum) * 100}%` }}
+                              title={`${day.requests} requests`}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-medium text-slate-500">
+                          {day.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
+                    <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-sky-500" />Users</span>
+                    <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Providers</span>
+                    <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-amber-400" />Requests</span>
+                  </div>
+                </article>
+                <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">Admin activity</h3>
+                      <p className="mt-1 text-xs text-slate-500">Recent account actions</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveView("activity")}
+                      className="text-xs font-semibold text-emerald-800 hover:text-emerald-950"
+                    >
+                      View log
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {(data.activity || []).slice(0, 5).map((item) => (
+                      <div key={item._id} className="px-5 py-3.5">
+                        <p className="text-sm font-medium text-slate-800">
+                          {item.summary}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {item.adminEmail} · {formatDate(item.createdAt)}
+                        </p>
+                      </div>
+                    ))}
+                    {!(data.activity || []).length && (
+                      <p className="px-5 py-10 text-center text-sm text-slate-500">
+                        Admin actions will appear here.
+                      </p>
+                    )}
+                  </div>
+                </article>
               </div>
               <div className="mt-6 grid gap-6 xl:grid-cols-2">
                 <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -633,6 +816,52 @@ export default function AdminDashboard() {
                     render: (row) => (row.rating ? `${row.rating} / 5` : "—"),
                   },
                   { label: "Feedback", key: "feedback" },
+                ]}
+              />
+            </article>
+          )}
+          {activeView === "activity" && (
+            <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <DataTable
+                rows={views.activity || []}
+                emptyText="No admin actions have been recorded yet."
+                columns={[
+                  {
+                    label: "When",
+                    render: (row) => formatDate(row.createdAt),
+                  },
+                  {
+                    label: "Administrator",
+                    key: "adminEmail",
+                  },
+                  {
+                    label: "Action",
+                    render: (row) => (
+                      <>
+                        <span className="block font-semibold text-slate-800">
+                          {row.action} {row.targetType}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {row.summary}
+                        </span>
+                      </>
+                    ),
+                  },
+                  {
+                    label: "Target",
+                    render: (row) => (
+                      <>
+                        <span className="block">{row.targetName || "—"}</span>
+                        <span className="text-xs text-slate-500">
+                          {row.targetEmail || row.targetId}
+                        </span>
+                      </>
+                    ),
+                  },
+                  {
+                    label: "Request reference",
+                    render: (row) => row.requestId || "—",
+                  },
                 ]}
               />
             </article>

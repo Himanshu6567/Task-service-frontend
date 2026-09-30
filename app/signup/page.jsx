@@ -51,7 +51,10 @@ export default function Page() {
   const update = (event) =>
     setData((previous) => ({
       ...previous,
-      [event.target.name]: event.target.value,
+      [event.target.name]:
+        event.target.name === "mobile"
+          ? event.target.value.replace(/\D/g, "").slice(0, 10)
+          : event.target.value,
     }));
 
   const sendOtpRequest = async (payload, isResend = false) => {
@@ -123,6 +126,9 @@ export default function Page() {
 
     if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
       return showMessage("error", "Please enter a valid email address.");
+    }
+    if (!/^\d{10}$/.test(mobile)) {
+      return showMessage("error", "Enter a 10-digit mobile number.");
     }
     if (password.length < 8) {
       return showMessage(
@@ -334,9 +340,13 @@ export default function Page() {
                         className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-normal outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
                         type="tel"
                         name="mobile"
-                        placeholder="+91 98765 43210"
+                        placeholder="9876543210"
                         value={data.mobile}
                         onChange={update}
+                        inputMode="numeric"
+                        maxLength={10}
+                        pattern="[0-9]{10}"
+                        title="Enter exactly 10 digits"
                         required
                       />
                     </span>

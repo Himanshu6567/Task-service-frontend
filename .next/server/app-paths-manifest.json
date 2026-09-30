@@ -3,5 +3,7 @@
   "/page": "app/page.js",
   "/login/page": "app/login/page.js",
   "/signup/page": "app/signup/page.js",
-  "/my-messages/page": "app/my-messages/page.js"
+  "/my-messages/page": "app/my-messages/page.js",
+  "/Admin/page": "app/Admin/page.js",
+  "/Admin/dashboard/page": "app/Admin/dashboard/page.js"
 }
