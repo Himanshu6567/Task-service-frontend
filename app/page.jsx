@@ -85,8 +85,8 @@ function HeroSection() {
           <div className="overflow-hidden rounded-[2rem] border-8 border-white bg-emerald-100 shadow-[0_28px_70px_-30px_rgba(15,61,46,0.4)]">
             <img
               className="aspect-[4/3] w-full object-cover"
-              src="/image/2.png"
-              alt="People finding local services"
+              src="/image/home-service-professional.jpg"
+              alt="A home service professional cleaning a window"
             />
           </div>
           <div className="absolute -bottom-5 right-5 rounded-2xl bg-[#123f35] px-5 py-4 text-white shadow-xl shadow-emerald-950/20 sm:right-10">
