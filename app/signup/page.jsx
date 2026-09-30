@@ -12,7 +12,6 @@ import {
   Mail,
   MapPinned,
   Phone,
-  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { Link, useNavigate } from "../next-router";
@@ -151,12 +150,14 @@ export default function Page() {
         role,
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       const message =
         error.response?.data?.msg || "Unable to send the verification code.";
       showMessage(
         "error",
-        error.requestId ? `${message} (Reference: ${error.requestId})` : message,
+        error.requestId
+          ? `${message} (Reference: ${error.requestId})`
+          : message,
       );
     } finally {
       setIsSubmitting(false);
@@ -217,7 +218,9 @@ export default function Page() {
       const message = error.response?.data?.msg || "Unable to resend the code.";
       showMessage(
         "error",
-        error.requestId ? `${message} (Reference: ${error.requestId})` : message,
+        error.requestId
+          ? `${message} (Reference: ${error.requestId})`
+          : message,
       );
     }
   };

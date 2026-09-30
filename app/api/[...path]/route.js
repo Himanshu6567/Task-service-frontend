@@ -20,9 +20,7 @@ async function proxy(request, context) {
   const isOtpRequest = route.startsWith("signup/");
   const isOtpSend = route === "signup/send-otp" && request.method === "POST";
   const backendPath =
-    route === "initialService" || route === "Feedbacks"
-      ? `${route}/`
-      : route;
+    route === "initialService" || route === "Feedbacks" ? `${route}/` : route;
   const sourceUrl = new URL(request.url);
   const target = new URL(
     `${backendPath}${sourceUrl.search}`,

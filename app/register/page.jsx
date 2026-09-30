@@ -418,9 +418,12 @@ export default function Page() {
                   3
                 </span>
                 <div>
-                  <h2 className="font-semibold text-slate-900">Profile photo</h2>
+                  <h2 className="font-semibold text-slate-900">
+                    Profile photo
+                  </h2>
                   <p className="text-xs text-slate-500">
-                    Upload a clear photo. Large images are optimized before upload.
+                    Upload a clear photo. Large images are optimized before
+                    upload.
                   </p>
                 </div>
               </div>

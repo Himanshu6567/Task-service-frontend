@@ -152,7 +152,9 @@ export default function AdminDashboard() {
       setData(response.data);
       setError("");
     } catch (requestError) {
-      setError(requestError.response?.data?.msg || "Unable to refresh dashboard.");
+      setError(
+        requestError.response?.data?.msg || "Unable to refresh dashboard.",
+      );
     } finally {
       setRefreshing(false);
     }
@@ -197,7 +199,10 @@ export default function AdminDashboard() {
             [key]: Math.max(0, Number(current.stats[key] || 0) - 1),
           },
           activity: response.data.activity
-            ? [response.data.activity, ...(current.activity || [])].slice(0, 100)
+            ? [response.data.activity, ...(current.activity || [])].slice(
+                0,
+                100,
+              )
             : current.activity,
         };
       });
@@ -427,16 +432,16 @@ export default function AdminDashboard() {
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               {activeView !== "overview" && (
                 <label className="relative block w-full sm:max-w-xs">
-                <Search
-                  size={17}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search this view"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
-                />
+                  <Search
+                    size={17}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search this view"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+                  />
                 </label>
               )}
               <button
@@ -445,7 +450,10 @@ export default function AdminDashboard() {
                 disabled={refreshing}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800 disabled:opacity-60"
               >
-                <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
                 Refresh
               </button>
             </div>
@@ -496,17 +504,23 @@ export default function AdminDashboard() {
                           <div className="flex h-full w-full max-w-8 flex-col justify-end overflow-hidden rounded-t-lg bg-slate-100">
                             <div
                               className="w-full bg-sky-500"
-                              style={{ height: `${(day.users / chartMaximum) * 100}%` }}
+                              style={{
+                                height: `${(day.users / chartMaximum) * 100}%`,
+                              }}
                               title={`${day.users} users`}
                             />
                             <div
                               className="w-full bg-emerald-500"
-                              style={{ height: `${(day.providers / chartMaximum) * 100}%` }}
+                              style={{
+                                height: `${(day.providers / chartMaximum) * 100}%`,
+                              }}
                               title={`${day.providers} providers`}
                             />
                             <div
                               className="w-full bg-amber-400"
-                              style={{ height: `${(day.requests / chartMaximum) * 100}%` }}
+                              style={{
+                                height: `${(day.requests / chartMaximum) * 100}%`,
+                              }}
                               title={`${day.requests} requests`}
                             />
                           </div>
@@ -518,16 +532,29 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
-                    <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-sky-500" />Users</span>
-                    <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Providers</span>
-                    <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-amber-400" />Requests</span>
+                    <span className="inline-flex items-center gap-2">
+                      <i className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+                      Users
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <i className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                      Providers
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <i className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                      Requests
+                    </span>
                   </div>
                 </article>
                 <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                   <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                     <div>
-                      <h3 className="font-semibold text-slate-900">Admin activity</h3>
-                      <p className="mt-1 text-xs text-slate-500">Recent account actions</p>
+                      <h3 className="font-semibold text-slate-900">
+                        Admin activity
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Recent account actions
+                      </p>
                     </div>
                     <button
                       type="button"
