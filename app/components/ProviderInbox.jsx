@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { ArrowLeft, MessageCircle, Send, UserRound } from "lucide-react";
 import { useNavigate } from "../next-router";
-import { useSocket } from "../providers";
+import { useMessage, useSocket } from "../providers";
 import { getSession } from "../../lib/auth-client";
 
 export default function ProviderInbox({
@@ -15,6 +15,7 @@ export default function ProviderInbox({
 }) {
   const navigate = useNavigate();
   const socket = useSocket();
+  const { showMessage } = useMessage();
   const isCustomer = accountType === "customer";
   const [accountId, setAccountId] = useState(dashboardProviderId);
   const [conversations, setConversations] = useState([]);
@@ -138,7 +139,22 @@ export default function ProviderInbox({
       );
       setDraft("");
     } catch (error) {
-      console.error("Unable to send provider reply", error);
+      const requestId =
+        error.response?.headers?.["x-request-id"] ||
+        error.response?.data?.requestId;
+      console.error(
+        "Unable to send provider reply",
+        JSON.stringify({
+          status: error.response?.status,
+          code: error.code,
+          requestId,
+          message: error.response?.data?.msg || error.message,
+        }),
+      );
+      showMessage(
+        "error",
+        error.response?.data?.msg || "Unable to send your message",
+      );
     } finally {
       setSending(false);
     }

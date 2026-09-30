@@ -350,8 +350,22 @@ function ProviderChat({ provider, onClose }) {
       );
       setDraft("");
     } catch (error) {
-      console.error("Unable to send chat message", error);
-      showMessage("error", "Unable to send your message");
+      const requestId =
+        error.response?.headers?.["x-request-id"] ||
+        error.response?.data?.requestId;
+      console.error(
+        "Unable to send chat message",
+        JSON.stringify({
+          status: error.response?.status,
+          code: error.code,
+          requestId,
+          message: error.response?.data?.msg || error.message,
+        }),
+      );
+      showMessage(
+        "error",
+        error.response?.data?.msg || "Unable to send your message",
+      );
     } finally {
       setSending(false);
     }

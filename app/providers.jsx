@@ -75,11 +75,20 @@ function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
   const { showMessage } = useContext(MessageContext);
   useEffect(() => {
-    const socketInstance = io(window.location.origin, {
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL || window.location.origin;
+    const socketInstance = io(socketUrl, {
       transports: ["websocket"],
       reconnectionAttempts: 5,
       reconnectionDelay: 3000,
     });
+    const handleSocketError = (error) => {
+      console.error(
+        "[socket] connection failed",
+        JSON.stringify({ url: socketUrl, message: error.message }),
+      );
+    };
+    socketInstance.on("connect_error", handleSocketError);
     setSocket(socketInstance);
     getSession()
       .then((session) => {
@@ -104,6 +113,7 @@ function SocketProvider({ children }) {
       })
       .catch(() => {});
     return () => {
+      socketInstance.off("connect_error", handleSocketError);
       socketInstance.off("reqAccept");
       socketInstance.off("reqReject");
       socketInstance.disconnect();
