@@ -1,15 +1,4 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/[...path]/route": "app/api/[...path]/route.js",
-  "/UserProfile/page": "app/UserProfile/page.js",
-  "/Admin/dashboard/page": "app/Admin/dashboard/page.js",
-  "/login/page": "app/login/page.js",
-  "/my-bookings/page": "app/my-bookings/page.js",
-  "/Admin/page": "app/Admin/page.js",
-  "/my-messages/page": "app/my-messages/page.js",
-  "/provider-messages/page": "app/provider-messages/page.js",
   "/page": "app/page.js",
-  "/services/page": "app/services/page.js",
-  "/register/page": "app/register/page.js",
-  "/signup/page": "app/signup/page.js"
+  "/login/page": "app/login/page.js"
 }
